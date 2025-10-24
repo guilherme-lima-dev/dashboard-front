@@ -12,6 +12,12 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/src/__tests__
+jest.config.*
+jest.setup.*
+playwright.config.*
 
 # next.js
 /.next/
