@@ -153,7 +153,7 @@ export default function LoginPage() {
           </Paper>
         </Container>
 
-        {/* Lado direito - Ilustração */}
+        {/* Lado direito - Logo */}
         <Box
           style={{
             flex: 1,
@@ -162,22 +162,106 @@ export default function LoginPage() {
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
+            padding: '2rem',
           }}
         >
           <Box
             style={{
-              width: '80%',
-              height: '80%',
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '20px',
+              width: '100%',
+              height: '100%',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              position: 'relative',
             }}
           >
-            <Text size="xl" c="white" fw={600}>
-              Recuperação de Senha
-            </Text>
+            {/* Logo Principal - Centralizada e Grande */}
+            <Box
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '1rem',
+                zIndex: 2,
+              }}
+            >
+              <Image
+                src="/logo.jpg"
+                alt="Logo da Empresa"
+                width={200}
+                height={200}
+                style={{
+                  borderRadius: '20px',
+                  objectFit: 'cover',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                  border: '4px solid rgba(255, 255, 255, 0.2)',
+                }}
+              />
+              <Text size="xl" fw={700} c="white" ta="center">
+                Recuperação de Senha
+              </Text>
+              <Text size="md" c="rgba(255, 255, 255, 0.8)" ta="center">
+                Recupere o acesso à sua conta
+              </Text>
+            </Box>
+
+            {/* Elementos decorativos de fundo */}
+            <Box
+              style={{
+                position: 'absolute',
+                top: '10%',
+                right: '15%',
+                width: '60px',
+                height: '20px',
+                backgroundColor: 'rgba(255, 107, 53, 0.7)',
+                borderRadius: '10px',
+                transform: 'rotate(15deg)',
+                zIndex: 1,
+              }}
+            />
+            
+            <Box
+              style={{
+                position: 'absolute',
+                bottom: '15%',
+                left: '10%',
+                width: '40px',
+                height: '40px',
+                backgroundColor: 'rgba(78, 205, 196, 0.7)',
+                borderRadius: '50%',
+                zIndex: 1,
+              }}
+            />
+
+            <Box
+              style={{
+                position: 'absolute',
+                top: '25%',
+                left: '8%',
+                width: '80px',
+                height: '80px',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                backdropFilter: 'blur(10px)',
+                zIndex: 1,
+              }}
+            />
+
+            <Box
+              style={{
+                position: 'absolute',
+                bottom: '25%',
+                right: '8%',
+                width: '100px',
+                height: '60px',
+                backgroundColor: 'rgba(255, 71, 87, 0.7)',
+                borderRadius: '8px',
+                transform: 'rotate(-10deg)',
+                zIndex: 1,
+              }}
+            />
           </Box>
         </Box>
       </Box>
