@@ -7,9 +7,10 @@ import Topbar from './Topbar';
 import KPICards from './KPICards';
 import DashboardFilters from './DashboardFilters';
 import DashboardCharts from './DashboardCharts';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export default function Dashboard() {
-  const [currency, setCurrency] = useState<'USD' | 'BRL'>('USD');
+  const { currency } = useCurrency();
   const [mobileOpened, setMobileOpened] = useState(false);
   const [desktopOpened, setDesktopOpened] = useState(true);
   const [filters, setFilters] = useState({
@@ -20,7 +21,6 @@ export default function Dashboard() {
 
   const handleFiltersChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
-    console.log('Filtros aplicados:', newFilters);
   };
 
   return (
@@ -33,10 +33,7 @@ export default function Dashboard() {
       }}
       padding="md"
     >
-      <Topbar 
-        currency={currency} 
-        onCurrencyChange={setCurrency} 
-      />
+      <Topbar />
       
       <Sidebar 
         expanded={desktopOpened}
@@ -47,7 +44,7 @@ export default function Dashboard() {
         <Stack gap="md">
           <DashboardFilters onFiltersChange={handleFiltersChange} />
 
-          <KPICards currency={currency} />
+          <KPICards />
 
           <DashboardCharts currency={currency} />
         </Stack>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ColorSchemeScript } from '@mantine/core';
 import { AuthProvider } from './contexts/AuthContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
+import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import ClientMantineProvider from './components/ClientMantineProvider';
 
 import '@mantine/core/styles.css';
@@ -35,7 +37,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ClientMantineProvider>
           <AuthProvider>
-            {children}
+            <CurrencyProvider>
+              <AnalyticsProvider>
+                {children}
+              </AnalyticsProvider>
+            </CurrencyProvider>
           </AuthProvider>
         </ClientMantineProvider>
       </body>

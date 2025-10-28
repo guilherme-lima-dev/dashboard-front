@@ -4,13 +4,14 @@ import { useState, ReactNode } from 'react';
 import { AppShell } from '@mantine/core';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [currency, setCurrency] = useState<'USD' | 'BRL'>('USD');
+  const { currency, setCurrency } = useCurrency();
   const [mobileOpened, setMobileOpened] = useState(false);
   const [desktopOpened, setDesktopOpened] = useState(true);
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { 
   AppShell,
   Group, 
@@ -11,25 +10,57 @@ import {
   Select,
   Badge,
   Indicator,
-  Paper
+  Paper,
+  Loader,
+  Tooltip
 } from '@mantine/core';
 import { 
   IconUser, 
   IconSettings, 
   IconLogout, 
   IconBell,
-  IconChevronDown
+  IconChevronDown,
+  IconRefresh
 } from '@tabler/icons-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 
-interface TopbarProps {
-  currency: 'USD' | 'BRL';
-  onCurrencyChange: (currency: 'USD' | 'BRL') => void;
-}
-
-export default function Topbar({ currency, onCurrencyChange }: TopbarProps) {
-  const [exchangeRate] = useState(5.43);
+export default function Topbar() {
   const { logout, user } = useAuth();
+  const { 
+    currency,
+    setCurrency,
+    exchangeRate, 
+    refreshExchangeRate 
+  } = useCurrency();
+
+  const formatExchangeRate = () => {
+    if (exchangeRate.isLoading) {
+      return 'Carregando...';
+    }
+    
+    if (exchangeRate.error) {
+      return 'Erro na cotação';
+    }
+
+    return `1 USD = R$ ${exchangeRate.rate.toFixed(2)}`;
+  };
+
+  const getBadgeColor = () => {
+    if (exchangeRate.error) return 'red';
+    if (exchangeRate.isLoading) return 'gray';
+    return 'blue';
+  };
+
+  const getLastUpdatedText = () => {
+    const now = new Date();
+    const diffMs = now.getTime() - exchangeRate.lastUpdated.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffMinutes < 1) return 'Agora mesmo';
+    if (diffMinutes === 1) return 'Há 1 minuto';
+    return `Há ${diffMinutes} minutos`;
+  };
 
   return (
     <AppShell.Header p="md">
@@ -52,25 +83,68 @@ export default function Topbar({ currency, onCurrencyChange }: TopbarProps) {
         </Group>
 
         <Group gap="md">
-          <Group gap="xs">
-            <Text size="sm" c="dimmed">
-              Moeda:
-            </Text>
-            <Select
-              value={currency}
-              onChange={(value) => onCurrencyChange(value as 'USD' | 'BRL')}
-              data={[
-                { value: 'USD', label: 'USD' },
-                { value: 'BRL', label: 'BRL' }
-              ]}
-              size="sm"
-              w={80}
-            />
-            {currency === 'BRL' && (
-              <Badge variant="light" color="blue" size="sm">
-                1 USD = R$ {exchangeRate.toFixed(2)}
-              </Badge>
-            )}
+          <Group gap="md">
+            <Group gap="xs">
+              <Text size="sm" c="dimmed">
+                Moeda:
+              </Text>
+              <Select
+                value={currency}
+                onChange={(value) => setCurrency(value as 'USD' | 'BRL')}
+                data={[
+                  { value: 'USD', label: 'USD' },
+                  { value: 'BRL', label: 'BRL' }
+                ]}
+                size="sm"
+                w={80}
+              />
+            </Group>
+
+            {/* Cotação sempre visível com destaque */}
+            <Paper
+              p="xs"
+              radius="md"
+              withBorder
+              style={{
+                backgroundColor: '#f8f9fa',
+                borderColor: '#e9ecef',
+                minWidth: '200px'
+              }}
+            >
+              <Group gap="xs" justify="space-between">
+                <Group gap="xs">
+                  <Text size="xs" c="dimmed" fw={500}>
+                    Cotação USD/BRL:
+                  </Text>
+                  <Tooltip 
+                    label={`Última atualização: ${getLastUpdatedText()}${exchangeRate.source ? ` • Fonte: ${exchangeRate.source}` : ''}`}
+                    position="bottom"
+                  >
+                    <Badge 
+                      variant="filled" 
+                      color={getBadgeColor()} 
+                      size="md"
+                      style={{ cursor: 'help', fontWeight: 600 }}
+                    >
+                      {exchangeRate.isLoading && <Loader size="xs" mr="xs" />}
+                      {formatExchangeRate()}
+                    </Badge>
+                  </Tooltip>
+                </Group>
+                
+                <Tooltip label="Atualizar cotação">
+                  <ActionIcon 
+                    variant="light" 
+                    size="sm"
+                    onClick={refreshExchangeRate}
+                    loading={exchangeRate.isLoading}
+                    color="blue"
+                  >
+                    <IconRefresh size={14} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </Paper>
           </Group>
 
           <Indicator inline color="red" size={8}>

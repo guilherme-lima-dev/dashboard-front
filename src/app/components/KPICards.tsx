@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { 
   Paper, 
   Group, 
@@ -8,7 +9,9 @@ import {
   Stack, 
   SimpleGrid,
   Badge,
-  Box
+  Box,
+  Loader,
+  Alert
 } from '@mantine/core';
 import { 
   IconCurrencyDollar,
@@ -20,125 +23,189 @@ import {
   IconUserMinus,
   IconTarget,
   IconArrowUpRight,
-  IconArrowDownRight
+  IconArrowDownRight,
+  IconAlertCircle
 } from '@tabler/icons-react';
+import { useAnalytics } from '../contexts/AnalyticsContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface KPICardsProps {
-  currency: 'USD' | 'BRL';
 }
 
-const kpiData = [
-  {
-    id: 'mrr',
-    title: 'MRR',
-    subtitle: 'Monthly Recurring Revenue',
-    value: 95500,
-    change: -2.3,
-    trend: 'down',
-    icon: IconCurrencyDollar,
-    color: 'purple'
-  },
-  {
-    id: 'arr',
-    title: 'ARR',
-    subtitle: 'Annual Recurring Revenue',
-    value: 1146000,
-    change: 8.7,
-    trend: 'up',
-    icon: IconCalendarStats,
-    color: 'blue'
-  },
-  {
-    id: 'total_revenue',
-    title: 'Receita Total',
-    subtitle: 'Receita acumulada do período',
-    value: 287500,
-    change: 12.4,
-    trend: 'up',
-    icon: IconTrendingUp,
-    color: 'green'
-  },
-  {
-    id: 'recurring_value',
-    title: 'Valor Recorrente',
-    subtitle: 'MRR efetivado no ciclo',
-    value: 89200,
-    change: 5.2,
-    trend: 'up',
-    icon: IconRepeat,
-    color: 'teal'
-  },
-  {
-    id: 'active_subscriptions',
-    title: 'Assinaturas Ativas',
-    subtitle: 'Total de assinantes ativos',
-    value: 2847,
-    change: 3.8,
-    trend: 'up',
-    icon: IconUsers,
-    color: 'indigo'
-  },
-  {
-    id: 'new_subscribers',
-    title: 'Novos Assinantes',
-    subtitle: 'Assinantes do mês atual',
-    value: 320,
-    change: 15.6,
-    trend: 'up',
-    icon: IconUserPlus,
-    color: 'green'
-  },
-  {
-    id: 'cancellations',
-    title: 'Cancelamentos',
-    subtitle: 'Churns do mês atual',
-    value: 35,
-    change: -8.2,
-    trend: 'down',
-    icon: IconUserMinus,
-    color: 'red'
-  },
-  {
-    id: 'churn_rate',
-    title: 'Taxa de Churn',
-    subtitle: 'Percentual de cancelamento',
-    value: 1.23,
-    change: -0.4,
-    trend: 'down',
-    icon: IconTarget,
-    color: 'orange',
-    isPercentage: true
-  },
-  {
-    id: 'ltv',
-    title: 'LTV',
-    subtitle: 'Lifetime Value médio',
-    value: 2850,
-    change: 7.9,
-    trend: 'up',
-    icon: IconCurrencyDollar,
-    color: 'violet'
-  }
-];
+export default function KPICards() {
+  const { 
+    dashboardData, 
+    isLoading, 
+    error, 
+    fetchDashboardData,
+    formatCurrency,
+    formatPercentage 
+  } = useAnalytics();
+  
+  const { currency } = useCurrency();
 
-export default function KPICards({ currency }: KPICardsProps) {
-  const exchangeRate = 5.43;
+  useEffect(() => {
+    fetchDashboardData({
+      currency: currency,
+      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0]
+    });
+  }, [currency, fetchDashboardData]);
 
-  const formatValue = (value: number, isPercentage = false) => {
+  const formatValue = (value: number, isPercentage = false, isCount = false) => {
     if (isPercentage) {
-      return `${value.toFixed(2)}%`;
+      return formatPercentage(value);
     }
-    
-    if (currency === 'BRL') {
-      return `R$ ${(value * exchangeRate).toLocaleString('pt-BR')}`;
+    if (isCount) {
+      return value.toLocaleString('pt-BR');
     }
-    return `$${value.toLocaleString('en-US')}`;
+    const safeCurrency = currency || 'BRL';
+    return formatCurrency(value, safeCurrency);
   };
 
-  const formatChange = (change: number) => {
-    const sign = change >= 0 ? '+' : '';
-    return `${sign}${change.toFixed(1)}%`;
+  const formatChange = (change: string) => {
+    return change;
   };
+
+  if (isLoading) {
+    return (
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }} spacing="md">
+        {Array.from({ length: 9 }).map((_, index) => (
+          <Paper key={index} p="lg" radius="lg" shadow="xs" withBorder>
+            <Stack gap="md" align="center">
+              <Loader size="md" />
+              <Text size="sm" c="dimmed">Carregando...</Text>
+            </Stack>
+          </Paper>
+        ))}
+      </SimpleGrid>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert 
+        icon={<IconAlertCircle size={16} />} 
+        title="Erro ao carregar métricas" 
+        color="red"
+        variant="light"
+      >
+        {error}
+      </Alert>
+    );
+  }
+
+  if (!dashboardData?.revenue || !dashboardData?.subscriptions || !dashboardData?.customers) {
+    return (
+      <Alert 
+        icon={<IconAlertCircle size={16} />} 
+        title="Nenhum dado encontrado" 
+        color="yellow"
+        variant="light"
+      >
+        Não foi possível carregar as métricas da dashboard.
+      </Alert>
+    );
+  }
+
+  const { revenue, subscriptions, customers } = dashboardData;
+
+  const kpiData = [
+    {
+      id: 'mrr',
+      title: 'MRR',
+      subtitle: 'Monthly Recurring Revenue',
+      value: currency === 'USD' ? revenue.mrrUsd : revenue.mrrBrl,
+      change: '+0%',
+      trend: 'up',
+      icon: IconCurrencyDollar,
+      color: 'purple'
+    },
+    {
+      id: 'arr',
+      title: 'ARR',
+      subtitle: 'Annual Recurring Revenue',
+      value: currency === 'USD' ? (revenue.arrUsd || 0) : (revenue.arrBrl || 0),
+      change: '+0%',
+      trend: 'up',
+      icon: IconCalendarStats,
+      color: 'blue'
+    },
+    {
+      id: 'total_revenue',
+      title: 'Receita Total',
+      subtitle: 'Receita acumulada do período',
+      value: currency === 'USD' ? (revenue.revenueUsd || 0) : (revenue.revenueBrl || 0),
+      change: '+0%',
+      trend: 'up',
+      icon: IconTrendingUp,
+      color: 'green'
+    },
+    {
+      id: 'new_revenue',
+      title: 'Nova Receita',
+      subtitle: 'Receita não-recorrente',
+      value: currency === 'USD' ? (revenue.revenueUsd || 0) : (revenue.revenueBrl || 0),
+      change: '+0%',
+      trend: 'up',
+      icon: IconRepeat,
+      color: 'teal'
+    },
+    {
+      id: 'new_subscriptions',
+      title: 'Novas Assinaturas',
+      subtitle: 'Assinantes do período',
+      value: subscriptions.newSubscriptionsCount || 0,
+      change: '+0%',
+      trend: 'up',
+      icon: IconUserPlus,
+      color: 'green',
+      isCount: true
+    },
+    {
+      id: 'active_subscriptions',
+      title: 'Assinaturas Ativas',
+      subtitle: 'Total de assinantes ativos',
+      value: subscriptions.activeSubscriptionsCount || 0,
+      change: '+0%',
+      trend: 'up',
+      icon: IconUsers,
+      color: 'indigo',
+      isCount: true
+    },
+    {
+      id: 'cancellations',
+      title: 'Cancelamentos',
+      subtitle: 'Churns do período',
+      value: subscriptions.canceledSubscriptionsCount || 0,
+      change: '+0%',
+      trend: 'down',
+      icon: IconUserMinus,
+      color: 'red',
+      isCount: true
+    },
+    {
+      id: 'churn_rate',
+      title: 'Taxa de Churn',
+      subtitle: 'Percentual de cancelamento',
+      value: subscriptions.churnRate || 0,
+      change: '+0%',
+      trend: 'down',
+      icon: IconTarget,
+      color: 'orange',
+      isPercentage: true
+    },
+    {
+      id: 'ltv',
+      title: 'LTV',
+      subtitle: 'Lifetime Value médio',
+      value: currency === 'USD' ? (customers.averageRevenuePerUserUsd || 0) : (customers.averageRevenuePerUserBrl || 0),
+      change: '+0%',
+      trend: 'up',
+      icon: IconCurrencyDollar,
+      color: 'violet'
+    }
+  ];
 
   return (
     <SimpleGrid 
@@ -191,34 +258,34 @@ export default function KPICards({ currency }: KPICardsProps) {
 
               <Box>
                 <Text size="xl" fw={700} c="dark.8">
-                  {formatValue(kpi.value, kpi.isPercentage)}
+                  {formatValue(kpi.value, kpi.isPercentage, kpi.isCount)}
                 </Text>
               </Box>
 
-              <Group justify="space-between" align="center">
-                <Badge
-                  size="sm"
-                  radius="md"
-                  variant="light"
-                  color={isPositive ? 'green' : 'red'}
-                  leftSection={
-                    isPositive ? 
-                      <IconArrowUpRight size={12} /> : 
-                      <IconArrowDownRight size={12} />
-                  }
-                  style={{
-                    backgroundColor: isPositive ? '#f0fdf4' : '#fef2f2',
-                    color: isPositive ? '#16a34a' : '#dc2626',
-                    border: `1px solid ${isPositive ? '#bbf7d0' : '#fecaca'}`
-                  }}
-                >
-                  {formatChange(kpi.change)}
-                </Badge>
-                
-                <Text size="xs" c="dimmed">
-                  vs mês anterior
-                </Text>
-              </Group>
+              {/*<Group justify="space-between" align="center">*/}
+              {/*  <Badge*/}
+              {/*    size="sm"*/}
+              {/*    radius="md"*/}
+              {/*    variant="light"*/}
+              {/*    color={isPositive ? 'green' : 'red'}*/}
+              {/*    leftSection={*/}
+              {/*      isPositive ? */}
+              {/*        <IconArrowUpRight size={12} /> : */}
+              {/*        <IconArrowDownRight size={12} />*/}
+              {/*    }*/}
+              {/*    style={{*/}
+              {/*      backgroundColor: isPositive ? '#f0fdf4' : '#fef2f2',*/}
+              {/*      color: isPositive ? '#16a34a' : '#dc2626',*/}
+              {/*      border: `1px solid ${isPositive ? '#bbf7d0' : '#fecaca'}`*/}
+              {/*    }}*/}
+              {/*  >*/}
+              {/*    {formatChange(kpi.change)}*/}
+              {/*  </Badge>*/}
+
+              {/*  <Text size="xs" c="dimmed">*/}
+              {/*    vs mês anterior*/}
+              {/*  </Text>*/}
+              {/*</Group>*/}
             </Stack>
           </Paper>
         );

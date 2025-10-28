@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import HttpInterceptor from '../utils/httpInterceptor';
 
 interface User {
   id: string;
@@ -38,7 +39,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isAuthenticated = !!user;
 
+  const handleSessionExpired = () => {
+    setUser(null);
+    router.push('/login');
+  };
+
   useEffect(() => {
+    const interceptor = HttpInterceptor.getInstance();
+    interceptor.configure({
+      onUnauthorized: handleSessionExpired,
+    });
+
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('accessToken');
@@ -62,7 +73,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           localStorage.removeItem('refreshToken');
         }
       } catch (error) {
-        console.error('Erro ao verificar autenticação:', error);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
       } finally {
@@ -71,7 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     checkAuth();
-  }, []);
+  }, [router]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -97,7 +107,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       router.push('/dashboard');
     } catch (error) {
-      console.error('Erro no login:', error);
       throw error;
     }
   };
@@ -115,9 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           body: JSON.stringify({ refreshToken }),
         });
       }
-    } catch (error) {
-      console.error('Erro no logout:', error);
-    } finally {
+    } catch (error) {} finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       setUser(null);
@@ -143,7 +150,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Erro ao recuperar senha:', error);
       throw error;
     }
   };
@@ -166,7 +172,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Erro no registro:', error);
       throw error;
     }
   };

@@ -5,7 +5,9 @@ import {
   Group, 
   Text, 
   SimpleGrid,
-  Stack
+  Stack,
+  Loader,
+  Center
 } from '@mantine/core';
 import { 
   LineChart, 
@@ -19,42 +21,14 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-
-const userGrowthData = [
-  { month: 'Jan', novos: 120, cancelamentos: 15, liquido: 105 },
-  { month: 'Fev', novos: 145, cancelamentos: 22, liquido: 123 },
-  { month: 'Mar', novos: 180, cancelamentos: 18, liquido: 162 },
-  { month: 'Abr', novos: 165, cancelamentos: 25, liquido: 140 },
-  { month: 'Mai', novos: 200, cancelamentos: 20, liquido: 180 },
-  { month: 'Jun', novos: 220, cancelamentos: 28, liquido: 192 },
-  { month: 'Jul', novos: 195, cancelamentos: 23, liquido: 172 },
-  { month: 'Ago', novos: 240, cancelamentos: 30, liquido: 210 },
-  { month: 'Set', novos: 260, cancelamentos: 25, liquido: 235 },
-  { month: 'Out', novos: 280, cancelamentos: 32, liquido: 248 },
-  { month: 'Nov', novos: 300, cancelamentos: 28, liquido: 272 },
-  { month: 'Dez', novos: 320, cancelamentos: 35, liquido: 285 }
-];
-
-const mrrGrowthData = [
-  { month: 'Jan', mrr: 65000 },
-  { month: 'Fev', mrr: 68500 },
-  { month: 'Mar', mrr: 72000 },
-  { month: 'Abr', mrr: 74500 },
-  { month: 'Mai', mrr: 78000 },
-  { month: 'Jun', mrr: 81200 },
-  { month: 'Jul', mrr: 79800 },
-  { month: 'Ago', mrr: 83500 },
-  { month: 'Set', mrr: 86700 },
-  { month: 'Out', mrr: 89200 },
-  { month: 'Nov', mrr: 92000 },
-  { month: 'Dez', mrr: 95500 }
-];
+import { useAnalytics } from '../contexts/AnalyticsContext';
 
 interface DashboardChartsProps {
   currency: 'USD' | 'BRL';
 }
 
 export default function DashboardCharts({ currency }: DashboardChartsProps) {
+  const { userGrowthData, mrrEvolutionData, isLoading } = useAnalytics();
   const exchangeRate = 5.43;
 
   const formatCurrency = (value: number) => {
@@ -63,6 +37,18 @@ export default function DashboardCharts({ currency }: DashboardChartsProps) {
     }
     return `$${(value / 1000).toFixed(0)}k`;
   };
+
+  const processedUserGrowthData = userGrowthData ? userGrowthData.map(item => ({
+    month: item.month,
+    novos: item.new,
+    cancelamentos: item.canceled,
+    liquido: item.new - item.canceled
+  })) : [];
+
+  const processedMRRData = mrrEvolutionData ? mrrEvolutionData.map(item => ({
+    month: item.month,
+    mrr: item.mrr
+  })) : [];
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -96,46 +82,52 @@ export default function DashboardCharts({ currency }: DashboardChartsProps) {
           </Group>
 
           <div style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer>
-              <LineChart data={userGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fontSize: 12 }}
-                  stroke="#666"
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  stroke="#666"
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="novos" 
-                  stroke="#22c55e" 
-                  strokeWidth={3}
-                  name="Novos Assinantes"
-                  dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="cancelamentos" 
-                  stroke="#ef4444" 
-                  strokeWidth={3}
-                  name="Cancelamentos"
-                  dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="liquido" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
-                  name="Crescimento Líquido"
-                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {isLoading ? (
+              <Center h={300}>
+                <Loader size="md" />
+              </Center>
+            ) : (
+              <ResponsiveContainer>
+                <LineChart data={processedUserGrowthData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    stroke="#666"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    stroke="#666"
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="novos" 
+                    stroke="#22c55e" 
+                    strokeWidth={3}
+                    name="Novos Assinantes"
+                    dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="cancelamentos" 
+                    stroke="#ef4444" 
+                    strokeWidth={3}
+                    name="Cancelamentos"
+                    dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="liquido" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    name="Crescimento Líquido"
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Stack>
       </Paper>
@@ -154,28 +146,35 @@ export default function DashboardCharts({ currency }: DashboardChartsProps) {
           </Group>
 
           <div style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer>
-              <BarChart data={mrrGrowthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fontSize: 12 }}
-                  stroke="#666"
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  stroke="#666"
-                  tickFormatter={formatCurrency}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar 
-                  dataKey="mrr" 
-                  fill="#8b5cf6"
-                  name="MRR"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoading ? (
+              <Center h={300}>
+                <Loader size="lg" />
+              </Center>
+            ) : (
+              <ResponsiveContainer>
+                <BarChart data={processedMRRData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    stroke="#666"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    stroke="#666"
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar 
+                    dataKey="mrr" 
+                    fill="#8b5cf6" 
+                    name="MRR"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Stack>
       </Paper>
